@@ -66,6 +66,13 @@ class _RestaurantListPageState extends State<RestaurantListPage>
         ..add(RestaurantListInitialEvent(isNotification: _isNotification)));
     }, child: BlocBuilder<RestaurantListBloc, RestaurantListState>(
         builder: (context, state) {
+      sessionDebouncer.run(logOut);
+      // if (state is RestaurantListInitial) {
+      //   RestaurantListInitial.debouncer.run((() =>
+      //       BlocProvider.of<RestaurantListBloc>(context).add(const Logout())));
+      // } else {
+      //   RestaurantListInitial.debouncer.cancel();
+      // }
       return Scaffold(
           key: _scaffoldKey,
           appBar: _appbar(state),
@@ -327,98 +334,133 @@ class _RestaurantListPageState extends State<RestaurantListPage>
   }
 
   Widget _buildItem(int index, Restaurant restaurant, RestaurantView view) {
+    // var state = context.read<RestaurantListState>();
     return Container(
       decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(width: 1, color: Colors.black12))),
-      child: ListTile(
-        onTap: () {
-          BlocProvider.of<RestaurantListBloc>(_scaffoldKey.currentContext!)
-              .add(OpenRestaurantDetails(restaurant: restaurant));
-        },
-        leading: SizedBox(
-          width: 100,
-          child: Stack(
-            children: [
-              const Center(child: CircularProgressIndicator()),
-              Hero(
+      child: Column(
+        children: [
+          if (restaurant.isMoreInfo)
+            InkWell(
+              onTap: () {
+                BlocProvider.of<RestaurantListBloc>(
+                        _scaffoldKey.currentContext!)
+                    .add(OpenRestaurantToogle(restaurant: restaurant));
+              },
+              child: Hero(
                 tag: restaurant.pictureId,
-                child: Container(
-                  decoration: BoxDecoration(
-                      image: DecorationImage(
-                          image: NetworkImageWithRetry(
-                              "https://restaurant-api.dicoding.dev/images/medium/${restaurant.pictureId}"),
-                          fit: BoxFit.cover),
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(10))),
+                child: Image.network(
+                  'https://restaurant-api.dicoding.dev/images/medium/${restaurant.pictureId}',
+                  fit: BoxFit.fitWidth,
                 ),
               ),
-            ],
-          ),
-        ),
-        title: Container(
-            padding: const EdgeInsets.only(top: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    restaurant.name,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                InkWell(
-                  child: Icon(
-                      restaurant.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: restaurant.isFavorite ? icon2Color : primaryColor),
-                  onTap: () {
-                    if (view == RestaurantView.favorites &&
-                        restaurant.isFavorite) {
-                      removeItem(index, restaurant);
-                    }
-                    BlocProvider.of<RestaurantListBloc>(
-                            _scaffoldKey.currentContext!)
-                        .add(ToggleFavorite(restaurant: restaurant));
-                  },
-                )
-              ],
-            )),
-        subtitle: Container(
-          height: 40,
-          padding: const EdgeInsets.only(bottom: 2),
-          margin: const EdgeInsets.only(bottom: 3),
-          child: Column(
-            children: [
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            )
+          else
+            const SizedBox(),
+          ListTile(
+            onTap: () {
+              BlocProvider.of<RestaurantListBloc>(_scaffoldKey.currentContext!)
+                  .add(OpenRestaurantDetails(restaurant: restaurant));
+              // BlocProvider.of<RestaurantListBloc>(_scaffoldKey.currentContext!)
+              //     .add(OpenRestaurantToogle(restaurant: restaurant));
+            },
+            leading: SizedBox(
+              width: 100,
+              child: Stack(
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 15,
-                        color: icon1Color,
+                  const Center(child: CircularProgressIndicator()),
+                  InkWell(
+                    onTap: () {
+                      BlocProvider.of<RestaurantListBloc>(
+                              _scaffoldKey.currentContext!)
+                          .add(OpenRestaurantToogle(restaurant: restaurant));
+                    },
+                    child: Hero(
+                      tag: restaurant.isMoreInfo
+                          ? "${restaurant.pictureId}z"
+                          : restaurant.pictureId,
+                      child: Container(
+                        decoration: BoxDecoration(
+                            image: DecorationImage(
+                                image: NetworkImageWithRetry(
+                                    "https://restaurant-api.dicoding.dev/images/medium/${restaurant.pictureId}"),
+                                fit: BoxFit.cover),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10))),
                       ),
-                      Text(" ${restaurant.city}"),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        size: 15,
-                        color: icon1Color,
-                      ),
-                      Text(" ${restaurant.rating}"),
-                    ],
+                    ),
                   ),
                 ],
-              )
-            ],
+              ),
+            ),
+            title: Container(
+                padding: const EdgeInsets.only(top: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        restaurant.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    InkWell(
+                      child: Icon(
+                          restaurant.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: restaurant.isFavorite
+                              ? icon2Color
+                              : primaryColor),
+                      onTap: () {
+                        if (view == RestaurantView.favorites &&
+                            restaurant.isFavorite) {
+                          removeItem(index, restaurant);
+                        }
+                        BlocProvider.of<RestaurantListBloc>(
+                                _scaffoldKey.currentContext!)
+                            .add(ToggleFavorite(restaurant: restaurant));
+                      },
+                    )
+                  ],
+                )),
+            subtitle: Container(
+              height: 40,
+              padding: const EdgeInsets.only(bottom: 2),
+              margin: const EdgeInsets.only(bottom: 3),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 15,
+                            color: icon1Color,
+                          ),
+                          Text(" ${restaurant.city}"),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            size: 15,
+                            color: icon1Color,
+                          ),
+                          Text(" ${restaurant.rating}"),
+                        ],
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

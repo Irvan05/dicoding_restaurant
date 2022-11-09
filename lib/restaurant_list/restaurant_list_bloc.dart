@@ -1,3 +1,4 @@
+import 'package:dicoding_restaurant/login/login_page.dart';
 import 'package:dicoding_restaurant/utils/database_provider.dart';
 import 'package:dicoding_restaurant/utils/screen_arguments.dart';
 import 'package:dicoding_restaurant/utils/globals.dart';
@@ -36,6 +37,11 @@ class OpenRestaurantDetails extends RestaurantListEvent {
   const OpenRestaurantDetails({required this.restaurant});
 }
 
+class OpenRestaurantToogle extends RestaurantListEvent {
+  final Restaurant restaurant;
+  const OpenRestaurantToogle({required this.restaurant});
+}
+
 class ToggleNotification extends RestaurantListEvent {
   final bool isNotification;
   const ToggleNotification({required this.isNotification});
@@ -49,6 +55,10 @@ class ToggleFavorite extends RestaurantListEvent {
 class ToggleRestaurantView extends RestaurantListEvent {
   final RestaurantView restaurantView;
   const ToggleRestaurantView({required this.restaurantView});
+}
+
+class Logout extends RestaurantListEvent {
+  const Logout();
 }
 
 ////////////////////////
@@ -92,6 +102,7 @@ class RestaurantListInitial extends RestaurantListState {
   final int searchCtr;
   final int favCtr;
   final int favSearchCtr;
+  // static final debouncer = Debouncer(milliseconds: 60000);
 
   const RestaurantListInitial(
       {required super.isSearch,
@@ -118,9 +129,19 @@ class RestaurantListBloc
     on<ToggleSearch>(_toggleSearch);
     on<RestaurantSearch>(_restaurantSearch);
     on<OpenRestaurantDetails>(_openRestaurantDetails);
+    on<OpenRestaurantToogle>(_openRestaurantToogle);
     on<ToggleNotification>(_toggleNotification);
     on<ToggleFavorite>(_toggleFavorite);
     on<ToggleRestaurantView>(_toggleRestaurantView);
+    on<Logout>(_logout);
+  }
+
+  void _logout(Logout event, Emitter<RestaurantListState> emit) async {
+    // Navigator.pushReplacement(
+    // navigatorKey.currentContext!, MaterialPageRoute(
+    //   builder: (context) => const LoginPage(),
+    // ));
+    Navigator.pop(navigatorKey.currentContext!);
   }
 
   void _loadingInitial(RestaurantListInitialEvent event,
@@ -315,6 +336,31 @@ class RestaurantListBloc
             favCtr: favCtr,
             favSearchCtr: favSearchCtr));
       }
+    }
+  }
+
+  void _openRestaurantToogle(
+      OpenRestaurantToogle event, Emitter<RestaurantListState> emit) async {
+    if (state is RestaurantListInitial) {
+      RestaurantListInitial currentState = state as RestaurantListInitial;
+      emit(RestaurantListLoading(
+        isSearch: currentState.isSearch,
+        isNotification: currentState.isNotification,
+        restaurantView: currentState.restaurantView,
+      ));
+      Restaurant res = event.restaurant;
+      res.isMoreInfo = !res.isMoreInfo;
+
+      emit(RestaurantListInitial(
+          isSearch: currentState.isSearch,
+          isNotification: currentState.isNotification,
+          restaurantView: currentState.restaurantView,
+          restaurantList: currentState.restaurantList,
+          restaurantListSearch: currentState.restaurantListSearch,
+          ctr: currentState.ctr,
+          searchCtr: currentState.searchCtr,
+          favCtr: currentState.favCtr,
+          favSearchCtr: currentState.favSearchCtr));
     }
   }
 

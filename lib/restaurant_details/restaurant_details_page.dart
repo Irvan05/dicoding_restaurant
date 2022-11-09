@@ -61,11 +61,14 @@ class _RestaurantDetailsPageState extends State<RestaurantDetailsPage>
   @override
   Widget build(BuildContext context) {
     return BlocProvider(create: (context) {
-      return (RestaurantDetailsBloc(RestaurantDetailsLoading(),
-          RestaurantDetailsProvider(_restaurant.id), DatabaseProvider())
+      return (RestaurantDetailsBloc(
+          RestaurantDetailsLoading(cartItem: const <MenuDetails>[]),
+          RestaurantDetailsProvider(_restaurant.id),
+          DatabaseProvider())
         ..add(const RestaurantDetailsInitialEvent()));
     }, child: BlocBuilder<RestaurantDetailsBloc, RestaurantDetailsState>(
         builder: (context, state) {
+      sessionDebouncer.run(logOut);
       return Scaffold(
         key: _scaffoldKey,
         body: WillPopScope(
@@ -297,28 +300,78 @@ class _RestaurantDetailsPageState extends State<RestaurantDetailsPage>
                   child: Align(
                     alignment: Alignment.topRight,
                     child: SafeArea(
-                      child: FavoriteButton(
-                          iconSize: 60,
-                          isFavorite: state.restaurant.isFavorite,
-                          valueChanged: (_) {
-                            BlocProvider.of<RestaurantDetailsBloc>(
-                                    _scaffoldKey.currentContext!)
-                                .add(ToggleFavorite(restaurant: _restaurant));
-                          }),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                BlocProvider.of<RestaurantDetailsBloc>(
+                                        _scaffoldKey.currentContext!)
+                                    .add(OpenCart());
+                              },
+                              icon: Icon(
+                                Icons.shopping_cart,
+                                color: Colors.white,
+                                size: 30,
+                              )),
+                          FavoriteButton(
+                              iconSize: 60,
+                              isFavorite: state.restaurant.isFavorite,
+                              valueChanged: (_) {
+                                BlocProvider.of<RestaurantDetailsBloc>(
+                                        _scaffoldKey.currentContext!)
+                                    .add(ToggleFavorite(
+                                        restaurant: _restaurant));
+                              }),
+                        ],
+                      ),
                     ),
                   ))
               : const SizedBox()
         ],
       ),
       title: _top <= MediaQuery.of(context).padding.top + kToolbarHeight
-          ? Text(_restaurant.name,
-              style: GoogleFonts.openSans(
-                textStyle: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ))
+          ? SafeArea(
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(_restaurant.name,
+                          style: GoogleFonts.openSans(
+                            textStyle: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                            ),
+                          )),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(state.cartItem.length.toString())),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: IconButton(
+                            onPressed: () {
+                              BlocProvider.of<RestaurantDetailsBloc>(
+                                      _scaffoldKey.currentContext!)
+                                  .add(OpenCart());
+                            },
+                            icon: Icon(
+                              Icons.shopping_cart,
+                              color: Colors.white,
+                              size: 30,
+                            )),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )
           : OutlinedText(
               bgColor: Colors.white,
               fgColor: Colors.black,
@@ -411,12 +464,15 @@ class _RestaurantDetailsPageState extends State<RestaurantDetailsPage>
       controller: _autoScrollController,
       index: index,
       child: InkWell(
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Coming soon...'),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Added to Cart...'),
             duration: Duration(seconds: 2),
-          ),
-        ),
+          ));
+
+          BlocProvider.of<RestaurantDetailsBloc>(_scaffoldKey.currentContext!)
+              .add(AddToCart(item: menuDetails));
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -447,7 +503,7 @@ class _RestaurantDetailsPageState extends State<RestaurantDetailsPage>
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 14),
               child: Text(
-                'Rp -',
+                'Rp 10.000',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

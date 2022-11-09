@@ -6,12 +6,10 @@ const primaryColor = Color(0xFFF5A265);
 const secondaryColor = Color(0xFFA86534);
 const primaryFadeColor = Color.fromARGB(255, 255, 231, 213);
 
-
 const icon1Color = Color(0xFF00B330);
 const icon2Color = Color.fromARGB(255, 175, 0, 0);
 
 enum RestaurantView { allRestaurant, favorites }
-
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -35,6 +33,22 @@ class Debouncer {
   cancel() {
     _timer?.cancel();
   }
+}
+
+// bool isLogin = false;
+final sessionDebouncer = Debouncer(milliseconds: 10000);
+
+void logOut() {
+  ScaffoldMessenger.of(navigatorKey.currentContext!)
+      .showSnackBar(const SnackBar(
+    content: Text('Should Logout...'),
+    duration: Duration(seconds: 2),
+  ));
+  print('Should Logout...');
+  // Navigator.pushReplacement(
+  // navigatorKey.currentContext!, MaterialPageRoute(
+  //   builder: (context) => const LoginPage(),
+  // ));
 }
 
 class OutlinedText extends StatelessWidget {

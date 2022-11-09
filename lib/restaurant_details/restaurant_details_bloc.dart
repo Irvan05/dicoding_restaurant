@@ -1,3 +1,4 @@
+import 'package:dicoding_restaurant/cart/cart_page.dart';
 import 'package:dicoding_restaurant/utils/database_provider.dart';
 import 'package:dicoding_restaurant/utils/globals.dart';
 import 'package:dicoding_restaurant/models/restaurant.dart';
@@ -40,22 +41,38 @@ class ToggleFavorite extends RestaurantDetailsEvent {
   const ToggleFavorite({required this.restaurant});
 }
 
+class AddToCart extends RestaurantDetailsEvent {
+  final MenuDetails item;
+  const AddToCart({required this.item});
+}
+
+class OpenCart extends RestaurantDetailsEvent {
+  const OpenCart();
+}
+
 ////////////////////////
 // STATE //////////////////////
 abstract class RestaurantDetailsState extends Equatable {
+  final List<MenuDetails> cartItem;
+
+  const RestaurantDetailsState({required this.cartItem});
+
   @override
   List<Object> get props => [];
 }
 
 class RestaurantDetailsLoading extends RestaurantDetailsState {
-  RestaurantDetailsLoading();
+  RestaurantDetailsLoading({required super.cartItem});
 }
 
 class RestaurantDetailsError extends RestaurantDetailsState {
   final String message;
   final String errorSource;
 
-  RestaurantDetailsError({required this.message, required this.errorSource});
+  RestaurantDetailsError(
+      {required this.message,
+      required this.errorSource,
+      required super.cartItem});
 }
 
 class RestaurantDetailsInitial extends RestaurantDetailsState {
@@ -66,7 +83,8 @@ class RestaurantDetailsInitial extends RestaurantDetailsState {
   RestaurantDetailsInitial(
       {required this.restaurant,
       required this.foodsList,
-      required this.drinksList});
+      required this.drinksList,
+      required super.cartItem});
 }
 
 ////////////////////////
@@ -83,13 +101,44 @@ class RestaurantDetailsBloc
     on<SearchBoxQuery>(_searchBoxQuery);
     on<OpenReviewPage>(_openReviewPage);
     on<ToggleFavorite>(_toggleFavorite);
+    on<AddToCart>(_addToCart);
+    on<OpenCart>(_openCart);
+  }
+
+  void _openCart(OpenCart event, Emitter<RestaurantDetailsState> emit) {
+    if (state is RestaurantDetailsInitial) {
+      Navigator.push(
+          navigatorKey.currentContext!,
+          MaterialPageRoute(
+            builder: (context) => CartPage(
+              cartItems: state.cartItem,
+            ),
+          ));
+    }
+  }
+
+  void _addToCart(AddToCart event, Emitter<RestaurantDetailsState> emit) {
+    if (state is RestaurantDetailsInitial) {
+      RestaurantDetailsInitial currentState = state as RestaurantDetailsInitial;
+      emit(RestaurantDetailsLoading(cartItem: state.cartItem));
+
+      List<MenuDetails> temp = List<MenuDetails>.empty(growable: true);
+      //state.cartItem;
+      temp.addAll(state.cartItem);
+      temp.add(event.item);
+      emit(RestaurantDetailsInitial(
+          restaurant: currentState.restaurant,
+          foodsList: currentState.foodsList,
+          drinksList: currentState.drinksList,
+          cartItem: temp));
+    }
   }
 
   void _toggleFavorite(
       ToggleFavorite event, Emitter<RestaurantDetailsState> emit) {
     if (state is RestaurantDetailsInitial) {
       RestaurantDetailsInitial currentState = state as RestaurantDetailsInitial;
-      emit(RestaurantDetailsLoading());
+      emit(RestaurantDetailsLoading(cartItem: state.cartItem));
       var restaurant = event.restaurant;
       bool toggle = !event.restaurant.isFavorite;
       restaurant.isFavorite = toggle;
@@ -99,7 +148,8 @@ class RestaurantDetailsBloc
       emit(RestaurantDetailsInitial(
           restaurant: currentState.restaurant,
           foodsList: currentState.foodsList,
-          drinksList: currentState.drinksList));
+          drinksList: currentState.drinksList,
+          cartItem: state.cartItem));
     }
   }
 
@@ -116,7 +166,7 @@ class RestaurantDetailsBloc
       SearchBoxQuery event, Emitter<RestaurantDetailsState> emit) async {
     if (state is RestaurantDetailsInitial) {
       RestaurantDetailsInitial currentState = state as RestaurantDetailsInitial;
-      emit(RestaurantDetailsLoading());
+      emit(RestaurantDetailsLoading(cartItem: state.cartItem));
 
       List<MenuDetails> foodsList = currentState.foodsList;
       List<MenuDetails> drinksList = currentState.drinksList;
@@ -139,7 +189,8 @@ class RestaurantDetailsBloc
       emit(RestaurantDetailsInitial(
           restaurant: restaurantDetails,
           foodsList: foodsList,
-          drinksList: drinksList));
+          drinksList: drinksList,
+          cartItem: state.cartItem));
     }
   }
 
@@ -147,7 +198,7 @@ class RestaurantDetailsBloc
       SearchBoxReset event, Emitter<RestaurantDetailsState> emit) async {
     if (state is RestaurantDetailsInitial) {
       RestaurantDetailsInitial currentState = state as RestaurantDetailsInitial;
-      emit(RestaurantDetailsLoading());
+      emit(RestaurantDetailsLoading(cartItem: state.cartItem));
 
       List<MenuDetails> foodsList = currentState.foodsList;
       List<MenuDetails> drinksList = currentState.drinksList;
@@ -163,13 +214,14 @@ class RestaurantDetailsBloc
       emit(RestaurantDetailsInitial(
           restaurant: restaurantDetails,
           foodsList: foodsList,
-          drinksList: drinksList));
+          drinksList: drinksList,
+          cartItem: state.cartItem));
     }
   }
 
   void _loadingInitial(RestaurantDetailsInitialEvent event,
       Emitter<RestaurantDetailsState> emit) async {
-    emit(RestaurantDetailsLoading());
+    emit(RestaurantDetailsLoading(cartItem: state.cartItem));
     try {
       Map<String, dynamic> restaurantDetailsData =
           await provider.getRestaurantDetails();
@@ -197,18 +249,21 @@ class RestaurantDetailsBloc
         emit(RestaurantDetailsInitial(
             restaurant: restaurantDetails,
             foodsList: foodsList,
-            drinksList: drinksList));
+            drinksList: drinksList,
+            cartItem: state.cartItem));
       } else if (restaurantDetailsData['error'] != null) {
         emit(RestaurantDetailsError(
             message: restaurantDetailsData['error'],
-            errorSource: restaurantDetailsData['errorSource']));
+            errorSource: restaurantDetailsData['errorSource'],
+            cartItem: state.cartItem));
       } else {
         throw ('_mapRestaurantDetailsLoadingInitialToState error');
       }
     } catch (e) {
       emit(RestaurantDetailsError(
           message: e.toString(),
-          errorSource: '_mapRestaurantDetailsLoadingInitialToState catch'));
+          errorSource: '_mapRestaurantDetailsLoadingInitialToState catch',
+          cartItem: state.cartItem));
     }
   }
 }

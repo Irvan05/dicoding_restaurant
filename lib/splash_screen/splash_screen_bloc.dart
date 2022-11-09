@@ -1,4 +1,5 @@
 // EVENT //////////////
+import 'package:dicoding_restaurant/login/login_page.dart';
 import 'package:dicoding_restaurant/utils/globals.dart';
 import 'package:dicoding_restaurant/restaurant_list/restaurant_list_page.dart';
 import 'package:equatable/equatable.dart';
@@ -37,9 +38,14 @@ class SplashScreenBloc extends Bloc<SplashScreenEvent, SplashScreenState> {
       Future.delayed(const Duration(milliseconds: 600), () async {
         final prefs = await SharedPreferences.getInstance();
         final bool isNotification = prefs.getBool('dailyReminder') ?? false;
-        Navigator.pushReplacementNamed(
-            navigatorKey.currentContext!, RestaurantListPage.routeName,
-            arguments: isNotification);
+        // Navigator.pushReplacementNamed(
+        //     navigatorKey.currentContext!, RestaurantListPage.routeName,
+        //     arguments: isNotification);
+        Navigator.push(
+            navigatorKey.currentContext!,
+            MaterialPageRoute(
+              builder: (context) => const LoginPage(),
+            ));
       });
     } catch (e) {
       Navigator.pushReplacementNamed(

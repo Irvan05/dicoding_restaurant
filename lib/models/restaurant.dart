@@ -56,7 +56,8 @@ class Restaurant {
       required this.isFavorite,
       this.menus,
       this.category,
-      this.customerReviews});
+      this.customerReviews,
+      this.isMoreInfo = false});
 
   String id;
   String name;
@@ -68,6 +69,7 @@ class Restaurant {
   Menus? menus;
   List<Category>? category;
   List<CustomerReview>? customerReviews;
+  bool isMoreInfo;
 
   factory Restaurant.fromAPIList(Map<String, dynamic> json) {
     return Restaurant(
@@ -159,6 +161,7 @@ class MenuDetails {
   });
 
   String name;
+  int price = 10000;
 
   factory MenuDetails.fromJson(Map<String, dynamic> json) => MenuDetails(
         name: json["name"],
